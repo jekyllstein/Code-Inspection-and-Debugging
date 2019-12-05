@@ -1,4 +1,46 @@
 # Code-Inspection-and-Debugging
+## References
+- https://github.com/JuliaDebug has all relevant debugging packages
+- https://github.com/JuliaDebug/Cthulhu.jl Cthulhu package: Cthulhu can help you debug type inference issues by recursively showing the code_typed output until you find the exact point where inference gave up, messed up, or did something unexpected.
+- https://github.com/JuliaDebug/Debugger.jl Debugger.jl package: Allows for manipulating program execution, such as stepping in and out of functions, line stepping, showing local variables, setting breakpoints and evaluating code in the context of functions.
+
+## Type inference debugging with Cthulhu.jl
+- Tool for debugging type instabilities with an alternative workflow to:
+       - @code_typed
+       - search for call(g, ...)::Any
+       - code_typed(g, ...)
+       - repeat through many layers before finding the problem
+- Not a debugger, operates on typed IR not lowered IR, intended for use on abstractions who's type inference you're curious about, not runtime values
+- Helpful for cases where the instability only occurs in context, not when the call is inspected on its own
+- To begin use the `@descend` macro to explore typed IR which will reveal a menu of options
+```julia
+julia> h(A, B) = A .+ B .* A
+h (generic function with 1 method)
+...
+│    ││││││ %266 = %new(Base.OneTo{Int64}, %265)::Base.OneTo{Int64}
+│    │││││└
+│    │││││ %267 = (Core.tuple)(%263, %266)::Tuple{Base.OneTo{Int64},Base.OneTo{Int64}}
+│    │││└└
+│    │││        invoke Base.Broadcast.throwdm(%267::Tuple{Base.OneTo{Int64},Base.OneTo{Int64}}, %76::Tuple{Base.OneTo{Int64},Base.OneTo{Int64}})::Union{}
+└────│││        $(Expr(:unreachable))::Union{}
+     │││ @ broadcast.jl:797 within `copyto!'
+100 ┄│││        goto #101
+     ││└
+101 ─││        goto #102
+     │└
+102 ─│        goto #103
+     └
+103 ─        return %81
+)
+Select a call to descend into or ↩ to ascend. [q]uit.
+Toggles: [o]ptimize, [w]arn, [d]ebuginfo, [s]yntax highlight for LLVM/Native.
+Show: [L]LVM IR, [N]ative code
+Advanced: dump [P]arams cache.
+
+ • %268  = invoke throwdm(::Tuple{Base.OneTo{Int64},Base.OneTo{Int64}},::Tuple{Base.OneTo{Int64},Base.OneTo{Int64}})::Union{}
+   ↩
+```
+- 
 
 ## Runtime Debugging with Debugger.jl
 - JuliaInterpreter.jl provides the backend for debugging tools
